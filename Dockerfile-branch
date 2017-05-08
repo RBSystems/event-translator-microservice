@@ -13,4 +13,4 @@ RUN go install -v
 
 CMD ["/go/bin/event-translator-microservice"]
 
-EXPOSE 8004
+EXPOSE 7002

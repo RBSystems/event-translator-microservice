@@ -15,10 +15,10 @@ func (aws *awsShadowReporter) Write(event eventinfrastructure.Event) {
 }
 
 //SetOutChan() will be called on each reporter, and events placed in the channel will be echoed to the local router.
-func (s *awsShadowReporter) SetOutChan(chan<- eventinfrastructure) {
+func (s *awsShadowReporter) SetOutChan(chan<- eventinfrastructure.Event) {
 }
 
-func GetReporter() *common.Reporter {
+func GetReporter() common.Reporter {
 	//Do whatever initialization is necessary here
 
 	return &awsShadowReporter{}

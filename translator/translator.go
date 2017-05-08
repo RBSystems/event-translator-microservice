@@ -20,7 +20,7 @@ var initialized = false
 
 var reporters = []common.Reporter{}
 
-const QueueSize = 1000
+const queueSize = 1000
 
 var retryCount = 60
 
@@ -118,6 +118,4 @@ func StartTranslator(routerAddr string, publisherPort string) error {
 			reporters[i].Write(event)
 		}
 	}
-
-	return nil
 }

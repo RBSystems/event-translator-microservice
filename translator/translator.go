@@ -118,6 +118,4 @@ func StartTranslator(routerAddr string, publisherPort string) error {
 			reporters[i].Write(event)
 		}
 	}
-
-	return nil
 }

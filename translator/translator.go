@@ -20,7 +20,7 @@ var initialized = false
 
 var reporters = []common.Reporter{}
 
-const queueSize = 1000
+const QueueSize = 1000
 
 var retryCount = 60
 

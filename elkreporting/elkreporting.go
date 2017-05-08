@@ -10,11 +10,11 @@ type elkReporter struct{}
 func (e *elkReporter) Write(event eventinfrastructure.Event) {
 }
 
-func (s *elkReporter) SetOutChan(chan<- eventinfrastructure) {
+func (s *elkReporter) SetOutChan(chan<- eventinfrastructure.Event) {
 }
 
-func GetReporter() *common.Reporter {
+func GetReporter() common.Reporter {
 	//Do whatever initialization is necessary
 
-	return elkReporter{}
+	return &elkReporter{}
 }

@@ -10,9 +10,9 @@ type saltReporter struct{}
 func (s *saltReporter) Write(event eventinfrastructure.Event) {
 }
 
-func (s *saltReporter) SetOutChan(chan<- eventinfrastructure) {
+func (s *saltReporter) SetOutChan(chan<- eventinfrastructure.Event) {
 }
 
-func GetReporter() *common.Reporter {
-	return saltReporter{}
+func GetReporter() common.Reporter {
+	return &saltReporter{}
 }

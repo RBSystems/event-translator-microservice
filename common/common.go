@@ -2,14 +2,9 @@ package common
 
 import (
 	"github.com/byuoitav/event-router-microservice/eventinfrastructure"
-	"github.com/byuoitav/event-translator-microservice/awsshadowreporting"
-	"github.com/byuoitav/event-translator-microservice/elkreporting"
-	"github.com/byuoitav/event-translator-microservice/saltreporting"
 )
 
-var initialized = false
-
-var reporters = []*Reporter{}
+//This package is so small because of otherwise cyclical dependencies
 
 /*
 Reporter is used to translate events internal to the system to external event systems, and vice versa.
@@ -21,17 +16,4 @@ SetOutChan() will be called on each reporter, and events placed in this channel 
 type Reporter interface {
 	Write(eventinfrastructure.Event)
 	SetOutChan(chan<- eventinfrastructure.Event)
-}
-
-/*
-Get Reporters returns a list of the reporters
-*/
-func GetReporters() []Reporter {
-	if !initialized {
-		reporters = append(reporters, awsshadowreporting.GetReporter())
-		reporters = append(reporters, saltreporting.GetReporter())
-		reporters = append(reporters, elkreporting.GetReporter())
-
-	}
-	return reporters
 }

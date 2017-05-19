@@ -3,6 +3,7 @@ package elkreporting
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -52,7 +53,9 @@ func ListenAndWrite() {
 					log.Printf("error: %v", err.Error())
 				}
 
-				log.Printf("Response %+v", resp)
+				val, err := ioutil.ReadAll(resp.Body)
+
+				log.Printf("Response %s", val)
 
 			} else {
 				log.Fatal("Write chan closed. (elk reporter)")

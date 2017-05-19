@@ -17,6 +17,7 @@ type elkReporter struct {
 }
 
 func (e *elkReporter) Write(event eventinfrastructure.Event) {
+	log.Printf("Writing an event to elk")
 	ch <- event
 }
 

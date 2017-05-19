@@ -17,7 +17,6 @@ type elkReporter struct {
 }
 
 func (e *elkReporter) Write(event eventinfrastructure.Event) {
-	log.Printf("Writing an event to elk")
 	ch <- event
 }
 
@@ -45,13 +44,16 @@ func ListenAndWrite() {
 					log.Printf("error: %v", err.Error())
 				}
 
-				_, err = http.Post(os.Getenv("ELASTIC_API_EVENTS"),
+				resp, err = http.Post(os.Getenv("ELASTIC_API_EVENTS"),
 					"application/json",
 					bytes.NewBuffer(b))
 
 				if err != nil {
 					log.Printf("error: %v", err.Error())
 				}
+
+				log.Printf("Response %+v", resp)
+
 			} else {
 				log.Fatal("Write chan closed. (elk reporter)")
 			}

@@ -44,7 +44,7 @@ func ListenAndWrite() {
 					log.Printf("error: %v", err.Error())
 				}
 
-				resp, err = http.Post(os.Getenv("ELASTIC_API_EVENTS"),
+				resp, err := http.Post(os.Getenv("ELASTIC_API_EVENTS"),
 					"application/json",
 					bytes.NewBuffer(b))
 

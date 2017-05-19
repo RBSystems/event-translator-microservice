@@ -113,6 +113,8 @@ func StartTranslator(routerAddr string, publisherPort string) error {
 			continue
 		}
 
+		log.Printf("Event recieved: %s", msg.MessageBody)
+
 		//write the events
 		for i := range reporters {
 			reporters[i].Write(event)

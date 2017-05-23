@@ -10,12 +10,13 @@ import (
 	"github.com/byuoitav/event-translator-microservice/common"
 )
 
+var eventBuffer chan eventinfrastructure.Event
+
 type saltReporter struct {
-	eventBuffer chan eventinfrastructure.Event
 }
 
 func (s *saltReporter) Write(event eventinfrastructure.Event) {
-	s.eventBuffer <- event
+	eventBuffer <- event
 	return
 }
 
@@ -25,16 +26,17 @@ func (s *saltReporter) SetOutChan(chan<- eventinfrastructure.Event) {
 }
 
 func GetReporter() common.Reporter {
-	buf = make(chan eventBuffer, 1000)
-	reporter := saltReporter{buf}
+	reporter := saltReporter{}
+	eventBuffer = make(chan eventinfrastructure.Event, 1000)
 
 	go reporter.startWriter("http://localhost:7010")
 	return &saltReporter{}
 }
 
 func (s *saltReporter) startWriter(saltEventAddr string) {
+	log.Printf("[SaltReporting] Waiting for events.")
 	for {
-		event, ok := <-s.eventBuffer
+		event, ok := <-eventBuffer
 		if ok {
 			log.Printf("[SaltReporting] Writing event")
 
@@ -46,7 +48,7 @@ func (s *saltReporter) startWriter(saltEventAddr string) {
 				continue
 			}
 
-			_, err := http.Get(addr, "application/json", bytes.NewBuffer(b))
+			_, err = http.Post(addr, "application/json", bytes.NewBuffer(b))
 			if err != nil {
 				log.Printf("[SaltReporting] Error sending event %v. ERROR: %v", event, err.Error())
 			}

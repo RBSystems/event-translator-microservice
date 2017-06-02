@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/byuoitav/event-router-microservice/handlers"
+	"github.com/byuoitav/event-translator-microservice/handlers"
 	"github.com/byuoitav/event-translator-microservice/translator"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"

@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"log"
+	"net/http"
 
 	"github.com/byuoitav/event-router-microservice/eventinfrastructure"
 	"github.com/byuoitav/event-router-microservice/subscription"
@@ -9,9 +10,20 @@ import (
 	"github.com/labstack/echo"
 )
 
-func Subscribe(context echo.Context) {
+func Subscribe(context echo.Context) error {
 	var sr subscription.SubscribeRequest
-	context.Bind(&sr)
+	err := context.Bind(&sr)
+	if err != nil {
+		log.Printf("[error] %s", err.Error())
+		return context.JSON(http.StatusInternalServerError, err.Error())
+	}
+
 	log.Printf("Subscribing to %s", sr.Address)
-	translator.Sub.Subscribe(sr.Address, []string{eventinfrastructure.Translator})
+	err = translator.Sub.Subscribe(sr.Address, []string{eventinfrastructure.Translator})
+	if err != nil {
+		log.Printf("[error] %s", err.Error())
+		return context.JSON(http.StatusInternalServerError, err.Error())
+	}
+
+	return context.JSON(http.StatusOK, context)
 }

@@ -16,7 +16,6 @@ type saltReporter struct {
 }
 
 func (s *saltReporter) Write(event eventinfrastructure.Event) {
-	eventBuffer <- event
 	return
 }
 
@@ -27,9 +26,6 @@ func (s *saltReporter) SetOutChan(chan<- eventinfrastructure.Event) {
 
 func GetReporter() common.Reporter {
 	reporter := saltReporter{}
-	eventBuffer = make(chan eventinfrastructure.Event, 1000)
-
-	go reporter.startWriter("http://localhost:7010")
 	return &saltReporter{}
 }
 

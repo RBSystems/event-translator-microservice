@@ -43,6 +43,7 @@ func GetReporters() []common.Reporter {
 }
 
 func StartTranslator(routerAddr string, publisherPort string) error {
+	log.Printf("Starting trasnlator")
 	writeChan := make(chan eventinfrastructure.Event, queueSize)
 
 	reporters := GetReporters()
@@ -54,9 +55,10 @@ func StartTranslator(routerAddr string, publisherPort string) error {
 
 	//Start our publisher
 	go func() {
+		log.Printf("[Publisher] Starting publisher")
 		pub, err := publisher.NewPublisher(publisherPort, queueSize, 10)
 		if err != nil {
-			log.Fatal("Error creating publisher: " + err.Error())
+			log.Fatal("[Publisher] Error creating publisher: " + err.Error())
 		}
 		pub.Listen()
 		header := [24]byte{}
@@ -67,19 +69,21 @@ func StartTranslator(routerAddr string, publisherPort string) error {
 				if ok {
 					b, err := json.Marshal(event)
 					if err != nil {
-						log.Printf("ERROR marshalling event into event struct: %s", err.Error())
+						log.Printf("[Publisher] ERROR marshalling event into event struct: %s", err.Error())
 						continue
 					}
 					pub.Write(message.Message{MessageHeader: header, MessageBody: b})
 				} else {
-					log.Fatal("Write chan closed.")
+					log.Fatal("[Publisher] Write chan closed.")
 				}
 			}
 		}
 	}()
 
+	var err error
+
 	//start our subscriber
-	Sub, err := subscriber.NewSubscriber(queueSize)
+	Sub, err = subscriber.NewSubscriber(queueSize)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("ERROR: Could not create subscriber: %s", err.Error()))
 		return err
@@ -94,16 +98,20 @@ func StartTranslator(routerAddr string, publisherPort string) error {
 		log.Printf("[error] %s", err)
 	}
 
+	log.Printf("Subscribing to router")
+
 	_, err = http.Post("http://localhost:6999/subscribe", "application/json", bytes.NewBuffer(body))
 	for err != nil {
 		log.Printf("[error] failed to connect to the router. Trying again...")
 		time.Sleep(3 * time.Second)
 		_, err = http.Post("http://localhost:6999/subscribe", "application/json", bytes.NewBuffer(body))
 	}
-	log.Printf("The event router is subscribed to me.")
 
+	log.Printf("Subscribe message sent.")
 	// listen to events and echo them out
+
 	for {
+		log.Printf("[Subscriber] starting subscriber")
 
 		msg := Sub.Read()
 
@@ -115,7 +123,7 @@ func StartTranslator(routerAddr string, publisherPort string) error {
 			continue
 		}
 
-		log.Printf("Event recieved: %s", msg.MessageBody)
+		log.Printf("[Subscriber] Event recieved: %s", msg.MessageBody)
 
 		//write the events
 		for i := range reporters {

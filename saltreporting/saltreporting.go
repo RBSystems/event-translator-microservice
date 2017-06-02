@@ -25,7 +25,6 @@ func (s *saltReporter) SetOutChan(chan<- eventinfrastructure.Event) {
 }
 
 func GetReporter() common.Reporter {
-	reporter := saltReporter{}
 	return &saltReporter{}
 }
 

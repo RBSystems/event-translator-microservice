@@ -3,6 +3,7 @@ package elkreporting
 import (
 	"bytes"
 	"encoding/json"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
@@ -32,27 +33,58 @@ func GetReporter() common.Reporter {
 	return &elkReporter{}
 }
 
+type ElkEvent struct {
+	eventinfrastructure.Event
+	EventCauseString string `json:"event-cause-string"`
+	EventTypeString  string `json:"event-type-string"`
+}
+
 func ListenAndWrite() {
 	for {
 		select {
 		case event, ok := <-ch:
 			if ok {
-				log.Printf("Sending event to : %v", os.Getenv("ELASTIC_API_EVENTS"))
+				//translate the enums to have string types
+				newEvent := ElkEvent{event, event.Event.EventCause.String(), event.Event.Type.String()}
+				log.Printf("[ELKReporting]Sending event to : %v", os.Getenv("ELASTIC_API_EVENTS"))
 
-				b, err := json.Marshal(event)
+				b, err := json.Marshal(newEvent)
 				if err != nil {
-					log.Printf("error: %v", err.Error())
+					log.Printf("[ELKReporting]error: %v", err.Error())
 				}
 
-				_, err = http.Post(os.Getenv("ELASTIC_API_EVENTS"),
+				resp, err := http.Post(os.Getenv("ELASTIC_API_EVENTS"),
 					"application/json",
 					bytes.NewBuffer(b))
 
 				if err != nil {
-					log.Printf("error: %v", err.Error())
+					continue
+					log.Printf("[ELKReporting]error: %v", err.Error())
 				}
+
+				val, err := ioutil.ReadAll(resp.Body)
+
+				log.Printf("[ELKReporting]Response %s", val)
+
+				//---------------------------------------------------------------
+				//TEMP
+				resp, err = http.Post("http://dev-elk-shipper0.byu.edu:5543",
+					"application/json",
+					bytes.NewBuffer(b))
+
+				if err != nil {
+					log.Printf("[ELKReporting]error: %v", err.Error())
+					continue
+				}
+
+				val, err = ioutil.ReadAll(resp.Body)
+
+				log.Printf("[ELKReporting]Response %s", val)
+				//END TEMP
+				//---------------------------------------------------------------
+
 			} else {
-				log.Fatal("Write chan closed. (elk reporter)")
+				log.Fatal("[ELKReporting]Write chan closed. (elk reporter)")
 			}
 		}
 	}

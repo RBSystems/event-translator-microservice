@@ -1,12 +1,15 @@
 package translator
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"log"
+	"net/http"
 	"time"
 
 	"github.com/byuoitav/event-router-microservice/eventinfrastructure"
+	"github.com/byuoitav/event-router-microservice/subscription"
 	"github.com/byuoitav/event-translator-microservice/awsshadowreporting"
 	"github.com/byuoitav/event-translator-microservice/common"
 	"github.com/byuoitav/event-translator-microservice/elkreporting"
@@ -24,6 +27,8 @@ const queueSize = 1000
 
 var retryCount = 60
 
+var Sub subscriber.Subscriber
+
 /*
 Get Reporters returns a list of the reporters
 */
@@ -38,6 +43,7 @@ func GetReporters() []common.Reporter {
 }
 
 func StartTranslator(routerAddr string, publisherPort string) error {
+	log.Printf("Starting trasnlator")
 	writeChan := make(chan eventinfrastructure.Event, queueSize)
 
 	reporters := GetReporters()
@@ -49,9 +55,10 @@ func StartTranslator(routerAddr string, publisherPort string) error {
 
 	//Start our publisher
 	go func() {
+		log.Printf("[Publisher] Starting publisher")
 		pub, err := publisher.NewPublisher(publisherPort, queueSize, 10)
 		if err != nil {
-			log.Fatal("Error creating publisher: " + err.Error())
+			log.Fatal("[Publisher] Error creating publisher: " + err.Error())
 		}
 		pub.Listen()
 		header := [24]byte{}
@@ -62,48 +69,51 @@ func StartTranslator(routerAddr string, publisherPort string) error {
 				if ok {
 					b, err := json.Marshal(event)
 					if err != nil {
-						log.Printf("ERROR marshalling event into event struct: %s", err.Error())
+						log.Printf("[Publisher] ERROR marshalling event into event struct: %s", err.Error())
 						continue
 					}
 					pub.Write(message.Message{MessageHeader: header, MessageBody: b})
 				} else {
-					log.Fatal("Write chan closed.")
+					log.Fatal("[Publisher] Write chan closed.")
 				}
 			}
 		}
 	}()
 
+	var err error
+
 	//start our subscriber
-	sub, err := subscriber.NewSubscriber(queueSize)
+	Sub, err = subscriber.NewSubscriber(queueSize)
 	if err != nil {
 		log.Fatal(fmt.Sprintf("ERROR: Could not create subscriber: %s", err.Error()))
 		return err
 	}
-	for retryCount > -1 {
-		err = sub.Subscribe(routerAddr, []string{eventinfrastructure.Translator})
-		if err != nil {
-			if retryCount > 0 { //retry
-				retryCount--
-				log.Printf("Susbcription to router failed with error %s,  will try again %v times", err.Error(), retryCount)
 
-				timer := time.NewTimer(2 * time.Second)
-				<-timer.C
-
-				log.Printf("Retrying subscription to router at %s", routerAddr)
-				continue
-			} else {
-				log.Fatal(fmt.Sprintf("ERROR: Could not subscribe to router %s, exceeded retry attempts error was: %s", routerAddr, err.Error()))
-				return err
-			}
-		} else {
-			break
-		}
+	// tell router to subscribe to me, and me to it
+	var s subscription.SubscribeRequest
+	s.Address = "localhost:7002"
+	s.PubAddress = "localhost:6998/subscribe"
+	body, err := json.Marshal(s)
+	if err != nil {
+		log.Printf("[error] %s", err)
 	}
 
-	// listen to events and echo them out
-	for {
+	log.Printf("Subscribing to router")
 
-		msg := sub.Read()
+	_, err = http.Post("http://localhost:6999/subscribe", "application/json", bytes.NewBuffer(body))
+	for err != nil {
+		log.Printf("[error] failed to connect to the router. Trying again...")
+		time.Sleep(3 * time.Second)
+		_, err = http.Post("http://localhost:6999/subscribe", "application/json", bytes.NewBuffer(body))
+	}
+
+	log.Printf("Subscribe message sent.")
+	// listen to events and echo them out
+
+	for {
+		log.Printf("[Subscriber] starting subscriber")
+
+		msg := Sub.Read()
 
 		var event eventinfrastructure.Event
 
@@ -112,6 +122,8 @@ func StartTranslator(routerAddr string, publisherPort string) error {
 			log.Printf("ERROR: Ther was a problem decoding a message to an event : %s", err.Error())
 			continue
 		}
+
+		log.Printf("[Subscriber] Event recieved: %s", msg.MessageBody)
 
 		//write the events
 		for i := range reporters {

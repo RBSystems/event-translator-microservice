@@ -3,7 +3,10 @@ package main
 import (
 	"os"
 
+	"github.com/byuoitav/event-translator-microservice/handlers"
 	"github.com/byuoitav/event-translator-microservice/translator"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 )
 
 func main() {
@@ -13,5 +16,12 @@ func main() {
 	if len(os.Getenv("LOCAL_ENVIRONMENT")) > 0 {
 		routerAddr = "localhost:7000"
 	}
-	translator.StartTranslator(routerAddr, port)
+	go translator.StartTranslator(routerAddr, port)
+
+	server := echo.New()
+	server.Pre(middleware.RemoveTrailingSlash())
+	server.Use(middleware.CORS())
+
+	server.POST("/subscribe", handlers.Subscribe)
+	server.Start(":6998")
 }

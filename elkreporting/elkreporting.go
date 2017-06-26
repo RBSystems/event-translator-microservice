@@ -46,43 +46,43 @@ func ListenAndWrite() {
 			if ok {
 				//translate the enums to have string types
 				newEvent := ElkEvent{event, event.Event.EventCause.String(), event.Event.Type.String()}
-				log.Printf("[ELKReporting]Sending event to : %v", os.Getenv("ELASTIC_API_EVENTS"))
 
 				b, err := json.Marshal(newEvent)
 				if err != nil {
 					log.Printf("[ELKReporting]error: %v", err.Error())
 				}
 
-				resp, err := http.Post(os.Getenv("ELASTIC_API_EVENTS"),
-					"application/json",
-					bytes.NewBuffer(b))
+				if len(os.Getenv("ELASTIC_API_EVENTS")) > 0 {
+					log.Printf("[ELKReporting]Sending event to : %v", os.Getenv("ELASTIC_API_EVENTS"))
 
-				if err != nil {
-					continue
-					log.Printf("[ELKReporting]error: %v", err.Error())
+					resp, err := http.Post(os.Getenv("ELASTIC_API_EVENTS"),
+						"application/json",
+						bytes.NewBuffer(b))
+
+					if err != nil {
+						log.Printf("[ELKReporting]error: %v", err.Error())
+						continue
+					}
+
+					val, err := ioutil.ReadAll(resp.Body)
+					log.Printf("[ELKReporting]Response %s", val)
 				}
 
-				val, err := ioutil.ReadAll(resp.Body)
+				if len(os.Getenv("ELASTIC_API_EVENTS_DEV")) > 0 {
+					log.Printf("[ELKReporting]Sending event to : %v", os.Getenv("ELASTIC_API_EVENTS_DEV"))
 
-				log.Printf("[ELKReporting]Response %s", val)
+					resp, err := http.Post(os.Getenv("ELASTIC_API_EVENTS_DEV"),
+						"application/json",
+						bytes.NewBuffer(b))
 
-				//---------------------------------------------------------------
-				//TEMP
-				resp, err = http.Post("http://dev-elk-shipper0.byu.edu:5543",
-					"application/json",
-					bytes.NewBuffer(b))
+					if err != nil {
+						log.Printf("[ELKReporting]error: %v", err.Error())
+						continue
+					}
 
-				if err != nil {
-					log.Printf("[ELKReporting]error: %v", err.Error())
-					continue
+					val, err := ioutil.ReadAll(resp.Body)
+					log.Printf("[ELKReporting]Response %s", val)
 				}
-
-				val, err = ioutil.ReadAll(resp.Body)
-
-				log.Printf("[ELKReporting]Response %s", val)
-				//END TEMP
-				//---------------------------------------------------------------
-
 			} else {
 				log.Fatal("[ELKReporting]Write chan closed. (elk reporter)")
 			}

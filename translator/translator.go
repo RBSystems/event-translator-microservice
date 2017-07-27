@@ -64,7 +64,7 @@ func StartTranslator(publisherPort string, sub *eventinfrastructure.Subscriber) 
 	req.PublisherAddr = "localhost:" + publisherPort
 	req.SubscriberEndpoint = "http://localhost:6998/subscribe"
 
-	go eventinfrastructure.SendConnectionRequest("http://localhost:6999/subscribe", req)
+	go eventinfrastructure.SendConnectionRequest("http://localhost:6999/subscribe", req, true)
 
 	// listen to events and echo them out
 	for {

@@ -52,6 +52,7 @@ func BindSubscriber(s *eventinfrastructure.Subscriber) echo.MiddlewareFunc {
 func GetStatus(context echo.Context) error {
 	var s microservicestatus.Status
 	var err error
+
 	s.Version, err = microservicestatus.GetVersion("version.txt")
 	if err != nil {
 		s.Version = "missing"

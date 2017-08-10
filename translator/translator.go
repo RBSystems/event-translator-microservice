@@ -32,8 +32,8 @@ func GetReporters() []common.Reporter {
 	return reporters
 }
 
-func StartTranslator(publisherPort string, sub *eventinfrastructure.Subscriber) error {
-	log.Printf("Starting trasnlator")
+func StartTranslator(en *eventinfrastructure.EventNode) error {
+	log.Printf("Starting translator")
 	writeChan := make(chan eventinfrastructure.Event, queueSize)
 
 	reporters := GetReporters()
@@ -44,13 +44,12 @@ func StartTranslator(publisherPort string, sub *eventinfrastructure.Subscriber) 
 	}
 
 	// start publihser, wait for events to come into writeChan
-	pub := eventinfrastructure.NewPublisher(publisherPort)
 	go func() {
 		for {
 			select {
 			case event, ok := <-writeChan:
 				if ok {
-					pub.PublishEvent(event, eventinfrastructure.External)
+					en.PublishEvent(event, eventinfrastructure.External)
 				} else {
 					log.Fatal("[Publisher] Write chan closed.")
 				}
@@ -61,7 +60,7 @@ func StartTranslator(publisherPort string, sub *eventinfrastructure.Subscriber) 
 	// start subscriber
 	// create connection with router
 	var req eventinfrastructure.ConnectionRequest
-	req.PublisherAddr = "localhost:" + publisherPort
+	req.PublisherAddr = "localhost:" + en.Port
 	req.SubscriberEndpoint = "http://localhost:6998/subscribe"
 
 	go eventinfrastructure.SendConnectionRequest("http://localhost:6999/subscribe", req, true)
@@ -69,7 +68,7 @@ func StartTranslator(publisherPort string, sub *eventinfrastructure.Subscriber) 
 	// listen to events and echo them out
 	for {
 		select {
-		case message, ok := <-sub.MessageChan:
+		case message, ok := <-en.Read:
 			if !ok {
 				log.Fatalf("[error] subscriber read channel closed")
 			}

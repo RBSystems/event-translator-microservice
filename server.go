@@ -14,6 +14,7 @@ import (
 
 func main() {
 	en := eventinfrastructure.NewEventNode("Translator", "7002", []string{eventinfrastructure.Translator}, os.Getenv("EVENT_ROUTER_ADDRESS"))
+	en.ConnectToRouter()
 	go translator.StartTranslator(en)
 
 	server := echo.New()

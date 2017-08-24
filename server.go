@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"net/http"
+	"os"
 
 	"github.com/byuoitav/device-monitoring-microservice/statusinfrastructure"
 	"github.com/byuoitav/event-router-microservice/eventinfrastructure"
@@ -12,7 +13,7 @@ import (
 )
 
 func main() {
-	en := eventinfrastructure.NewEventNode("Translator", "7002", []string{eventinfrastructure.Translator})
+	en := eventinfrastructure.NewEventNode("Translator", "7002", []string{eventinfrastructure.Translator}, os.Getenv("EVENT_ROUTER_ADDRESS"))
 	go translator.StartTranslator(en)
 
 	server := echo.New()
@@ -20,22 +21,7 @@ func main() {
 	server.Use(middleware.CORS())
 
 	server.GET("/mstatus", GetStatus)
-	server.POST("/subscribe", Subscribe, BindEventNode(en))
 	server.Start(":6998")
-}
-
-func Subscribe(context echo.Context) error {
-	var cr eventinfrastructure.ConnectionRequest
-	context.Bind(&cr)
-
-	e := context.Get(eventinfrastructure.ContextEventNode)
-	if en, ok := e.(*eventinfrastructure.EventNode); ok {
-		err := eventinfrastructure.HandleSubscriptionRequest(cr, en)
-		if err != nil {
-			return context.JSON(http.StatusBadRequest, err.Error())
-		}
-	}
-	return context.JSON(http.StatusOK, nil)
 }
 
 func BindEventNode(en *eventinfrastructure.EventNode) echo.MiddlewareFunc {

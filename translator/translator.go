@@ -59,23 +59,18 @@ func StartTranslator(en *eventinfrastructure.EventNode) error {
 
 	// listen to events and echo them out
 	for {
-		select {
-		case message, ok := <-en.Read:
-			if !ok {
-				log.Fatalf("[error] subscriber read channel closed")
-			}
+		message := en.Read()
 
-			var event eventinfrastructure.Event
-			err := json.Unmarshal(message.MessageBody, &event)
-			if err != nil {
-				log.Printf("[error] there was a problem decoding a message to an event: %s", err.Error())
-				continue
-			}
+		var event eventinfrastructure.Event
+		err := json.Unmarshal(message.MessageBody, &event)
+		if err != nil {
+			log.Printf("[error] there was a problem decoding a message to an event: %s", err.Error())
+			continue
+		}
 
-			//write the events
-			for i := range reporters {
-				reporters[i].Write(event)
-			}
+		//write the events
+		for i := range reporters {
+			reporters[i].Write(event)
 		}
 	}
 }

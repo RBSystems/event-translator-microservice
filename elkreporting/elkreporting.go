@@ -8,25 +8,25 @@ import (
 	"net/http"
 	"os"
 
-	"github.com/byuoitav/event-router-microservice/eventinfrastructure"
+	"github.com/byuoitav/common/events"
 	"github.com/byuoitav/event-translator-microservice/common"
 )
 
-var ch chan eventinfrastructure.Event
+var ch chan events.Event
 
 type elkReporter struct {
 }
 
-func (e *elkReporter) Write(event eventinfrastructure.Event) {
+func (e *elkReporter) Write(event events.Event) {
 	ch <- event
 }
 
-func (s *elkReporter) SetOutChan(chan<- eventinfrastructure.Event) {
+func (s *elkReporter) SetOutChan(chan<- events.Event) {
 }
 
 func GetReporter() common.Reporter {
 	//Do whatever initialization is necessary
-	ch = make(chan eventinfrastructure.Event, 100)
+	ch = make(chan events.Event, 100)
 
 	go ListenAndWrite()
 
@@ -34,12 +34,12 @@ func GetReporter() common.Reporter {
 }
 
 type ElkEvent struct {
-	eventinfrastructure.Event
+	events.Event
 	EventCauseString string `json:"event-cause-string"`
 	EventTypeString  string `json:"event-type-string"`
 }
 
-func SendElkEvent(address string, event eventinfrastructure.Event) error {
+func SendElkEvent(address string, event events.Event) error {
 	newEvent := ElkEvent{event, event.Event.EventCause.String(), event.Event.Type.String()}
 	b, err := json.Marshal(newEvent)
 	if err != nil {

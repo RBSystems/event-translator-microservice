@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"log"
 
-	"github.com/byuoitav/event-router-microservice/eventinfrastructure"
+	"github.com/byuoitav/common/events"
 	"github.com/byuoitav/event-translator-microservice/awsshadowreporting"
 	"github.com/byuoitav/event-translator-microservice/common"
 	"github.com/byuoitav/event-translator-microservice/elkreporting"
@@ -32,9 +32,9 @@ func GetReporters() []common.Reporter {
 	return reporters
 }
 
-func StartTranslator(en *eventinfrastructure.EventNode) error {
+func StartTranslator(en *events.EventNode) error {
 	log.Printf("Starting translator")
-	writeChan := make(chan eventinfrastructure.Event, queueSize)
+	writeChan := make(chan events.Event, queueSize)
 
 	reporters := GetReporters()
 
@@ -49,7 +49,7 @@ func StartTranslator(en *eventinfrastructure.EventNode) error {
 			select {
 			case event, ok := <-writeChan:
 				if ok {
-					en.PublishEvent(event, eventinfrastructure.External)
+					en.PublishEvent(event, events.External)
 				} else {
 					log.Fatal("[Publisher] Write chan closed.")
 				}
@@ -61,7 +61,7 @@ func StartTranslator(en *eventinfrastructure.EventNode) error {
 	for {
 		message := en.Read()
 
-		var event eventinfrastructure.Event
+		var event events.Event
 		err := json.Unmarshal(message.MessageBody, &event)
 		if err != nil {
 			log.Printf("[error] there was a problem decoding a message to an event: %s", err.Error())

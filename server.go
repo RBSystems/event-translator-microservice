@@ -13,7 +13,7 @@ import (
 )
 
 func main() {
-	en := events.NewEventNode("Translator", []string{events.Translator}, os.Getenv("EVENT_ROUTER_ADDRESS"))
+	en := events.NewEventNode("Translator", os.Getenv("EVENT_ROUTER_ADDRESS"), []string{events.Translator})
 	go translator.StartTranslator(en)
 
 	server := echo.New()

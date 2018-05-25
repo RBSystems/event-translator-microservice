@@ -1,7 +1,6 @@
 package translator
 
 import (
-	"encoding/json"
 	"log"
 
 	"github.com/byuoitav/common/events"
@@ -49,7 +48,7 @@ func StartTranslator(en *events.EventNode) error {
 			select {
 			case event, ok := <-writeChan:
 				if ok {
-					en.PublishEvent(event, events.External)
+					en.PublishEvent(events.External, event)
 				} else {
 					log.Fatal("[Publisher] Write chan closed.")
 				}
@@ -59,18 +58,15 @@ func StartTranslator(en *events.EventNode) error {
 
 	// listen to events and echo them out
 	for {
-		message := en.Read()
-
-		var event events.Event
-		err := json.Unmarshal(message.MessageBody, &event)
+		msg, err := en.Read()
 		if err != nil {
-			log.Printf("[error] there was a problem decoding a message to an event: %s", err.Error())
+			log.Printf("Error: %v", err.Error())
 			continue
 		}
 
 		//write the events
 		for i := range reporters {
-			reporters[i].Write(event)
+			reporters[i].Write(msg)
 		}
 	}
 }

@@ -5,15 +5,15 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/byuoitav/common/events"
 	"github.com/byuoitav/device-monitoring-microservice/statusinfrastructure"
-	"github.com/byuoitav/event-router-microservice/eventinfrastructure"
 	"github.com/byuoitav/event-translator-microservice/translator"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 )
 
 func main() {
-	en := eventinfrastructure.NewEventNode("Translator", []string{eventinfrastructure.Translator}, os.Getenv("EVENT_ROUTER_ADDRESS"))
+	en := events.NewEventNode("Translator", os.Getenv("EVENT_ROUTER_ADDRESS"), []string{events.Translator})
 	go translator.StartTranslator(en)
 
 	server := echo.New()
@@ -24,10 +24,10 @@ func main() {
 	server.Start(":6998")
 }
 
-func BindEventNode(en *eventinfrastructure.EventNode) echo.MiddlewareFunc {
+func BindEventNode(en *events.EventNode) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
-			c.Set(eventinfrastructure.ContextEventNode, en)
+			c.Set(events.ContextEventNode, en)
 			return next(c)
 		}
 	}

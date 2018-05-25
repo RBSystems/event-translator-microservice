@@ -1,10 +1,9 @@
 package translator
 
 import (
-	"encoding/json"
 	"log"
 
-	"github.com/byuoitav/event-router-microservice/eventinfrastructure"
+	"github.com/byuoitav/common/events"
 	"github.com/byuoitav/event-translator-microservice/awsshadowreporting"
 	"github.com/byuoitav/event-translator-microservice/common"
 	"github.com/byuoitav/event-translator-microservice/elkreporting"
@@ -32,9 +31,9 @@ func GetReporters() []common.Reporter {
 	return reporters
 }
 
-func StartTranslator(en *eventinfrastructure.EventNode) error {
+func StartTranslator(en *events.EventNode) error {
 	log.Printf("Starting translator")
-	writeChan := make(chan eventinfrastructure.Event, queueSize)
+	writeChan := make(chan events.Event, queueSize)
 
 	reporters := GetReporters()
 
@@ -49,7 +48,7 @@ func StartTranslator(en *eventinfrastructure.EventNode) error {
 			select {
 			case event, ok := <-writeChan:
 				if ok {
-					en.PublishEvent(event, eventinfrastructure.External)
+					en.PublishEvent(events.External, event)
 				} else {
 					log.Fatal("[Publisher] Write chan closed.")
 				}
@@ -59,18 +58,15 @@ func StartTranslator(en *eventinfrastructure.EventNode) error {
 
 	// listen to events and echo them out
 	for {
-		message := en.Read()
-
-		var event eventinfrastructure.Event
-		err := json.Unmarshal(message.MessageBody, &event)
+		msg, err := en.Read()
 		if err != nil {
-			log.Printf("[error] there was a problem decoding a message to an event: %s", err.Error())
+			log.Printf("Error: %v", err.Error())
 			continue
 		}
 
 		//write the events
 		for i := range reporters {
-			reporters[i].Write(event)
+			reporters[i].Write(msg)
 		}
 	}
 }

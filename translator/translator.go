@@ -39,6 +39,7 @@ func StartTranslator(en *events.EventNode) error {
 
 	//Set the write channel for all of the reporters
 	for _, currentReporter := range reporters {
+		log.Printf("Starting reporter")
 		currentReporter.SetOutChan(writeChan)
 	}
 

@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/byuoitav/common/events"
+	"github.com/byuoitav/common/log"
 	"github.com/byuoitav/device-monitoring-microservice/statusinfrastructure"
 	"github.com/byuoitav/event-translator-microservice/translator"
 	"github.com/labstack/echo"
@@ -21,6 +22,9 @@ func main() {
 	server.Use(middleware.CORS())
 
 	server.GET("/mstatus", GetStatus)
+	server.PUT("/log-level/:level", log.SetLogLevel)
+	server.GET("/log-level", log.GetLogLevel)
+
 	server.Start(":6998")
 }
 

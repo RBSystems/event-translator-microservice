@@ -4,12 +4,12 @@ import (
 	"bytes"
 	"encoding/json"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"time"
 
 	"github.com/byuoitav/common/events"
+	"github.com/byuoitav/common/log"
 	"github.com/byuoitav/event-translator-microservice/common"
 )
 
@@ -51,19 +51,19 @@ func SendElkEvent(address string, event events.Event, timeout time.Duration) err
 	newEvent := ElkEvent{event, event.Event.EventCause.String(), event.Event.Type.String()}
 	b, err := json.Marshal(newEvent)
 	if err != nil {
-		log.Printf("[ELKReporting]error: %v", err.Error())
+		log.L.Infof("[ELKReporting]error: %v", err.Error())
 	}
 	var client = &http.Client{
 		Timeout: timeout,
 	}
 
-	log.Printf("[ELKReporting]Sending event to : %v", address)
+	log.L.Infof("[ELKReporting]Sending event to : %v", address)
 	resp, err := client.Post(address,
 		"application/json",
 		bytes.NewBuffer(b))
 
 	if err != nil {
-		log.Printf("[ELKReporting]error: %v", err.Error())
+		log.L.Infof("[ELKReporting]error: %v", err.Error())
 		return err
 	}
 
@@ -71,10 +71,10 @@ func SendElkEvent(address string, event events.Event, timeout time.Duration) err
 
 	val, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("[ELKReporting]error: %v", err.Error())
+		log.L.Infof("[ELKReporting]error: %v", err.Error())
 		return err
 	}
-	log.Printf("[ELKReporting]Response %s", val)
+	log.L.Infof("[ELKReporting]Response %s", val)
 	return nil
 }
 
@@ -84,7 +84,7 @@ func ListenAndWriteCh(ch chan events.Event, addr string, timeout time.Duration) 
 		if ok {
 			SendElkEvent(addr, event, timeout)
 		} else {
-			log.Fatal("[ELKReporting] propagation chan closed. (elk reporter)")
+			log.L.Fatal("[ELKReporting] propagation chan closed. (elk reporter)")
 		}
 	}
 }
@@ -93,6 +93,7 @@ func ListenAndWrite() {
 	for {
 		select {
 		case event, ok := <-ch:
+			log.L.Infof("[ELKReporting] Event received, distributing to distribution channels")
 			if ok {
 
 				if len(os.Getenv("ELASTIC_API_EVENTS")) > 0 {
@@ -103,7 +104,7 @@ func ListenAndWrite() {
 					devch <- event
 				}
 			} else {
-				log.Fatal("[ELKReporting]Write chan closed. (elk reporter)")
+				log.L.Fatal("[ELKReporting]Write chan closed. (elk reporter)")
 			}
 		}
 	}

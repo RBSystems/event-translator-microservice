@@ -1,7 +1,7 @@
 package common
 
 import (
-	"github.com/byuoitav/event-router-microservice/eventinfrastructure"
+	"github.com/byuoitav/common/events"
 )
 
 //This package is so small because of otherwise cyclical dependencies
@@ -14,6 +14,6 @@ SetOutChan() will be called on each reporter, and events placed in this channel 
 
 */
 type Reporter interface {
-	Write(eventinfrastructure.Event)
-	SetOutChan(chan<- eventinfrastructure.Event)
+	Write(events.Event)
+	SetOutChan(chan<- events.Event)
 }

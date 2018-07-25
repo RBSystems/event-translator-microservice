@@ -6,21 +6,21 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/byuoitav/event-router-microservice/eventinfrastructure"
+	"github.com/byuoitav/common/events"
 	"github.com/byuoitav/event-translator-microservice/common"
 )
 
-var eventBuffer chan eventinfrastructure.Event
+var eventBuffer chan events.Event
 
 type saltReporter struct {
 }
 
-func (s *saltReporter) Write(event eventinfrastructure.Event) {
+func (s *saltReporter) Write(event events.Event) {
 	return
 }
 
 //no events will be received over the salt bus
-func (s *saltReporter) SetOutChan(chan<- eventinfrastructure.Event) {
+func (s *saltReporter) SetOutChan(chan<- events.Event) {
 	return
 }
 

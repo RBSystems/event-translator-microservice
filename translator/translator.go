@@ -1,6 +1,7 @@
 package translator
 
 import (
+	"reflect"
 	"sync"
 
 	"github.com/byuoitav/common/log"
@@ -21,26 +22,30 @@ var (
 // GetReporters returns a list of the reporters
 func GetReporters() []reporters.Reporter {
 	once.Do(func() {
-		reporterList = append(reporterList, reporters.ELKReporter{})
+		// TODO decide which ones to use based on local or in aws
+		reporterList = append(reporterList, &reporters.ELKReporter{})
 	})
 
 	return reporterList
 }
 
 // StartTranslator starts the event translator
-func StartTranslator(en *events.EventNode) error {
-	log.L.Infof("Starting translator")
+func StartTranslator(en *events.EventNode) {
 	writeChan := make(chan events.Event, queueSize)
 
-	reporters := GetReporters()
+	reporterNames := []string{}
+	for _, reporter := range GetReporters() {
+		reporterNames = append(reporterNames, reflect.TypeOf(reporter).String())
+	}
+
+	log.L.Infof("Starting translator with reporters: %s", reporterNames)
 
 	//Set the write channel for all of the reporters
-	for _, currentReporter := range reporters {
-		log.L.Infof("Starting reporter")
+	for _, currentReporter := range GetReporters() {
 		currentReporter.SetOutChan(writeChan)
 	}
 
-	// start publihser, wait for events to come into writeChan
+	// start publisher, wait for events to come into writeChan
 	go func() {
 		for {
 			select {
@@ -63,9 +68,10 @@ func StartTranslator(en *events.EventNode) error {
 		}
 
 		log.L.Debugf("Received event, pushing to reporters")
-		//write the events
-		for i := range reporters {
-			reporters[i].Write(msg)
+
+		// write the events
+		for _, reporter := range GetReporters() {
+			reporter.Write(msg)
 		}
 	}
 }

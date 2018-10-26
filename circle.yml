@@ -3,9 +3,7 @@ jobs:
     build:
         docker:
             - image: byuoitav/build-env:master
-
         working_directory: /go/src/github.com/byuoitav/event-translator-microservice
-
         steps:
             - checkout
             - setup_remote_docker

@@ -1,35 +1,33 @@
 package translator
 
 import (
-	"github.com/byuoitav/common/events"
+	"sync"
+
 	"github.com/byuoitav/common/log"
-	"github.com/byuoitav/event-translator-microservice/awsshadowreporting"
-	"github.com/byuoitav/event-translator-microservice/common"
-	"github.com/byuoitav/event-translator-microservice/elkreporting"
-	"github.com/byuoitav/event-translator-microservice/saltreporting"
+	"github.com/byuoitav/common/v2/events"
+	"github.com/byuoitav/event-translator-microservice/reporters"
 )
 
-var initialized = false
+const (
+	queueSize  = 1000
+	retryCount = 60
+)
 
-var reporters = []common.Reporter{}
+var (
+	once         sync.Once
+	reporterList []reporters.Reporter
+)
 
-const queueSize = 1000
+// GetReporters returns a list of the reporters
+func GetReporters() []reporters.Reporter {
+	once.Do(func() {
+		reporterList = append(reporterList, reporters.ELKReporter{})
+	})
 
-var retryCount = 60
-
-/*
-Get Reporters returns a list of the reporters
-*/
-func GetReporters() []common.Reporter {
-	if !initialized {
-		reporters = append(reporters, awsshadowreporting.GetReporter())
-		reporters = append(reporters, saltreporting.GetReporter())
-		reporters = append(reporters, elkreporting.GetReporter())
-		initialized = true
-	}
-	return reporters
+	return reporterList
 }
 
+// StartTranslator starts the event translator
 func StartTranslator(en *events.EventNode) error {
 	log.L.Infof("Starting translator")
 	writeChan := make(chan events.Event, queueSize)
